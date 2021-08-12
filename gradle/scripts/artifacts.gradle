@@ -1,0 +1,65 @@
+def extraTxts = [
+    rootProject.file('LICENSE')
+]
+
+def changelog = rootProject.file('build/changelog.txt')
+
+if (changelog.exists()) {
+    extraTxts += changelog
+}
+
+jar {
+    from extraTxts
+    from sourceSets.main.output
+    from sourceSets.api.output
+
+    from (configurations.shade.collect {
+        it.isDirectory() ? it : zipTree(it)
+    })
+}
+
+tasks.withType(Javadoc) {
+    options.addStringOption('Xdoclint:none', '-quiet')
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+
+    from extraTxts
+    from javadoc.destinationDir
+}
+
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+
+    from extraTxts
+    from processResources
+    from processApiResources
+
+    from sourceSets.main.allJava
+    from sourceSets.api.allJava
+}
+
+task apiJar(type: Jar) {
+    classifier = 'api'
+
+    from extraTxts
+    
+    from sourceSets.api.output
+}
+
+task apiSourcesJar(type: Jar) {
+    classifier = 'api-sources'
+
+    from extraTxts
+    from processApiResources
+
+    from sourceSets.api.allJava
+}
+
+artifacts {
+    archives javadocJar
+    archives sourcesJar
+    archives apiJar
+    archives apiSourcesJar
+}
